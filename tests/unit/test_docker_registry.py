@@ -288,3 +288,38 @@ def test_configure_registry_default_file_storage(config, *args):
         assert 'filesystem' in args[0]['storage']
         actual_storage_config = args[0]['storage']['filesystem']
         assert expected_storage['filesystem'].items() == actual_storage_config.items()
+
+@mock.patch(
+    "os.path.isfile",
+    side_effect=lambda path: path.endswith(".crt") or path.endswith(".key"),
+)
+@mock.patch("os.makedirs", mock.Mock(return_value=0))
+@mock.patch("charms.layer.docker_registry.unitdata")
+@mock.patch("charmhelpers.core.hookenv.config")
+def test_configure_registry_with_tls_path(config, *args):
+    config.return_value = {
+        "log-level": "info",
+        "tls-ca-path": "/path/to/ca.crt",
+        "tls-cert-path": "/path/to/cert.crt",
+        "tls-key-path": "/path/to/key.key",
+    }
+
+    expected_docker_volumes = {
+        "/srv/registry": "/var/lib/registry",
+        "/etc/docker/registry/config.yml": "/etc/docker/registry/config.yml",
+        "/path/to/cert.crt": "/etc/docker/registry/registry.crt",
+        "/path/to/key.key": "/etc/docker/registry/registry.key",
+        "/path/to/ca.crt": "/etc/docker/registry/ca.crt",
+    }
+
+    with mock.patch("charms.layer.docker_registry.yaml") as mock_yaml:
+        layer.docker_registry.configure_registry()
+        args, _ = mock_yaml.safe_dump.call_args_list[0]
+        assert (
+            "/etc/docker/registry/registry.crt" == args[0]["http"]["tls"]["certificate"]
+        )
+        assert "/etc/docker/registry/registry.key" == args[0]["http"]["tls"]["key"]
+        assert ["/etc/docker/registry/ca.crt"] == args[0]["http"]["tls"]["clientcas"]
+        layer.docker_registry.unitdata.kv.return_value.set.assert_called_once_with(
+            "docker_volumes", expected_docker_volumes
+        )
