@@ -76,16 +76,19 @@ def configure_registry():
     tls_cert = charm_config.get('tls-cert-path', '')
     tls_key = charm_config.get('tls-key-path', '')
     if os.path.isfile(tls_cert) and os.path.isfile(tls_key):
+        docker_tls_ca = '/etc/docker/registry/ca.crt'
+        docker_tls_cert = '/etc/docker/registry/registry.crt'
+        docker_tls_key = '/etc/docker/registry/registry.key'
         http['tls'] = {
-            'certificate': tls_cert,
-            'key': tls_key,
+            'certificate': docker_tls_cert,
+            'key': docker_tls_key,
         }
-        docker_volumes[tls_cert] = '/etc/docker/registry/registry.crt'
-        docker_volumes[tls_key] = '/etc/docker/registry/registry.key'
+        docker_volumes[tls_cert] = docker_tls_cert
+        docker_volumes[tls_key] = docker_tls_key
 
         if os.path.isfile(tls_ca):
-            http['tls']['clientcas'] = [tls_ca]
-            docker_volumes[tls_ca] = '/etc/docker/registry/ca.crt'
+            http['tls']['clientcas'] = [docker_tls_ca]
+            docker_volumes[tls_ca] = docker_tls_ca
 
     # debug (https://distribution.github.io/distribution/about/configuration/#debug)
     # The debug server always listens on port 5001, with debug-port used
