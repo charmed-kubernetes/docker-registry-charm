@@ -155,7 +155,7 @@ def configure_registry():
             'forcepathstyle': charm_config.get('storage-s3-forcepathstyle', False),
             'encrypt': charm_config.get('storage-s3-encrypt', False),
             'secure': charm_config.get('storage-s3-secure', True),
-            'skipverify': charm_config.get('storage-s3-skipverify', False),
+            'skipverify': charm_config.get('storage-s3-skip-verify', False),
             'v4auth': charm_config.get('storage-s3-v4auth', True),
             'chunksize': charm_config.get('storage-s3-chunksize', 10 * 1024 * 1024),
             'multipartcopychunksize': charm_config.get(
